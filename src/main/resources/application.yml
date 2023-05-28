@@ -1,0 +1,37 @@
+spring:
+  cloud:
+    gateway:
+      httpclient:
+      #connect-timeout: 10000
+      #response-timeout: 50s
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: ReportCircuitBreaker
+                fallbackUri: forward:/fallback/response/message
+            - RewritePath=/(?<segment>.*), /$\{segment}
+
+        - id: food-order-service
+          uri: lb://food-order-service
+          predicates:
+            - Path=/api/food/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: ReportCircuitBreaker
+                fallbackUri: forward:/fallback/response/message
+            - RewritePath=/(?<segment>.*), /$\{segment}
